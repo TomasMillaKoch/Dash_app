@@ -1,12 +1,12 @@
 import dash
 from dash import Dash, dcc, html, Input, Output, dash_table #pip install dash
-import jupyter_dash #integrated in jupyter notebooks
-from jupyter_dash import JupyterDash as JD
+#import jupyter_dash #integrated in jupyter notebooks
+#from jupyter_dash import JupyterDash as JD
 import dash_leaflet as dl
-import dash_leaflet.express as dlx #pip install --upgrade protobuf==3.20.0 --user before importing and if necessarym, restart the kernel
+#import dash_leaflet.express as dlx #pip install --upgrade protobuf==3.20.0 --user before importing and if necessarym, restart the kernel
 import requests
 import json
-from dash_extensions.javascript import assign, arrow_function, Namespace
+#from dash_extensions.javascript import assign, arrow_function, Namespace
 import pandas as pd
 #import geopandas as gpd
 import numpy as np
@@ -94,7 +94,7 @@ timeout = 20
 #making dropdown option based on property in data table
 id_list = []
 
-ns = Namespace("myNamespace", "mySubNamespace")
+#ns = Namespace("myNamespace", "mySubNamespace")
 
 #priority vs intermediate barrier list
 
