@@ -1,0 +1,17 @@
+#app {
+    background-color: #00828d;
+}
+
+#dropdown {
+    width:1500px
+}
+
+#map {
+    width: 1500px;
+    height: 500px;
+}
+
+#table2 {
+    float:left;
+    width: 1000px;
+}

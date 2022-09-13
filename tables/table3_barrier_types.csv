@@ -1,0 +1,19 @@
+﻿Barrier Class,Barrier Types,Spatial Connectivity Dimensions
+Water-control structures,Dams,Longitudinal
+,Weirs,Longitudinal
+,Water-withdrawal structures,Vertical
+Flood-mitigation infrastructure,"Tide gates, aboiteaux",Longitudinal/lateral
+,Pump stations,Vertical
+Stream crossings,Road-stream crossings,Longitudinal
+,Rail-stream crossings,Longitudinal
+,Trail-stream crossings,Longitudinal
+Lateral,"Dykes, levees",Lateral
+,"Roads, rail lines",Longitudinal/lateral
+,"Berms, embankments",Lateral
+Natural,Waterfalls,Longitudinal
+,"Debris jams (e.g., rocks, logs)",Longitudinal
+,Sediment wedges,Longitudinal/lateral
+Physiological,Gradient,Longitudinal
+,Flow,Vertical
+,Temperature,Vertical/longitudinal
+,Water quality,Vertical
