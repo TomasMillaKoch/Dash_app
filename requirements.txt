@@ -41,7 +41,7 @@ Flask-Caching==1.11.1
 Flask-Compress==1.12
 flit_core==3.7.1
 fonttools==4.34.4
-GDAL==3.4.1
+#GDAL==3.4.1
 geobuf==1.1.1
 gitdb==4.0.9
 GitPython==3.1.27
