@@ -15,6 +15,8 @@ from flask_caching import Cache
 import os
 import dash_bootstrap_components as dbc
 
+#pip list --format=freeze > requirements.txt
+
 # #querying data from pg_featureserv API for bcfishpass
 request = 'https://features.hillcrestgeo.ca/bcfishpass/collections/bcfishpass.streams/items.json'
 query = '?properties=watershed_group_code,segmented_stream_id&filter=watershed_group_code%20=%20%27HORS%27' #this query slows things down for some reason
