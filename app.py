@@ -85,18 +85,17 @@ prior_table['cost_benefit_ratio'] = prior_table.apply(lambda row: priority(row)[
 #https://dash-leaflet.herokuapp.com/
 #https://github.com/plotly/jupyter-dash/blob/master/notebooks/getting_started.ipynb
 
-from sre_constants import IN
+# from sre_constants import IN
 
 
-app = dash.Dash(__name__)
+app = Dash(__name__)
 server = app.server
 cache = Cache()
-cache.init_app(app.server, config={'CACHE_TYPE': 'SimpleCache'})
+cache.init_app(server, config={'CACHE_TYPE': 'SimpleCache'})
 timeout = 20
 #making dropdown option based on property in data table
 id_list = []
 
-#ns = Namespace("myNamespace", "mySubNamespace")
 
 #priority vs intermediate barrier list
 
@@ -136,9 +135,63 @@ prior_drop =  dcc.Dropdown(
                         {'label': 'Priority Barrier List', 'value': 'priority'},
                         {'label': 'Intermediate Barrier List', 'value': 'intermediate'}
                     ],
+                    placeholder='All Barriers',
                     id='dd',
                     style={'width': '500px'}
                 )
+
+barrtype_filter_drop = dcc.Dropdown(
+                        options=[
+                        {'label': 'TBD', 'value': 'TBD'},
+                        {'label': 'DAM', 'value': 'Dam'},
+                        {'label': 'PARTIAL', 'value': 'Partial'},
+                        {'label': 'FULL', 'value': 'Full'},
+                        {'label': 'PARTIAL-FULL', 'value': 'Partial-Full'},
+                        {'label': 'POTENTIAL', 'value': 'Potential'}
+                        ],
+                        placeholder="Barrier Type",
+                        id= 'barrtype',
+                        disabled=True,
+                        style={'width': '500px'}
+                    )
+
+nextstep_filter_drop = dcc.Dropdown(
+                        options=[
+                        {'label': 'Barrier Assessment', 'value': 'Barrier assessment'},
+                        {'label': 'Design', 'value': 'Design'},
+                        {'label': 'Follow up with Barrier Owner', 'value': 'Follow up with barrier owner'},
+                        {'label': 'Habitat Investigations', 'value': 'Habitat investigations'},
+                        {'label': 'Remediation', 'value': 'Remediation'}
+                        ],
+                        placeholder='Next Steps',
+                        id= 'nextstep',
+                        disabled=True,
+                        style={'width': '500px'}
+                    )
+
+pcsis_filter_drop = dcc.Dropdown(
+                        options=[
+                        {'label': 'HABITAT CONFIRMATION', 'value': 'HABITAT CONFIRMATION'},
+                        {'label': 'ASSESSED', 'value': 'ASSESSED'}
+                        ],
+                        placeholder='PCSIS Status',
+                        id= 'PCSIS',
+                        disabled=True,
+                        style={'width': '500px'}
+                    )
+
+barrstat_filter_drop = dcc.Dropdown(
+                        options=[
+                        {'label': 'PASSABLE', 'value': 'PASSABLE'},
+                        {'label': 'BARRIER', 'value': 'BARRIER'},
+                        {'label': 'POTENTIAL', 'value': 'POTENTIAL'},
+                        {'label': 'UNKNOWN', 'value': 'UNKNOWN'}
+                        ],
+                        placeholder='Barrier Status',
+                        id= 'barrstat',
+                        disabled=True,
+                        style={'width': '500px'}
+                    )
 
 watershed_drop = dcc.Dropdown(
                     options=[
@@ -154,15 +207,34 @@ watershed_drop = dcc.Dropdown(
 # App layout
 app.layout = html.Div([
 
-    html.H1("Web Application Dashboard for Fish Passage BC", style={'text-align': 'left'}),
+    html.H1("Web Application Dashboard for Fish Passage BC", id = "title"),
 
-    
+    html.H3("Barrier List"),
 
-    dbc.Row([
-        dbc.Col(prior_drop, width = 2),
-        dbc.Col(watershed_drop, width = 2)
+    html.Div([
+        html.Div([
+            dbc.Col(prior_drop, width = 2),
+            dbc.Col(watershed_drop, width = 2)
+        ])
     ], id="dropdown"),
+
+    html.H3("Priority Barrier List Filters"),
     
+    html.Div([
+        html.Div([
+            dbc.Col(barrtype_filter_drop, width = 2),
+            dbc.Col(nextstep_filter_drop, width = 2)
+        ])
+    ], id="extradropdown"),
+
+    html.H3("Intermediate & All Barrier List Filters"),
+    
+    html.Div([
+        html.Div([
+            dbc.Col(pcsis_filter_drop, width = 2),
+            dbc.Col(barrstat_filter_drop, width = 2)
+        ])
+    ], id="extradropdown2"),
     
 
     dl.Map(children=[
@@ -171,7 +243,7 @@ app.layout = html.Div([
         dl.LayersControl(
         [dl.BaseLayer(dl.TileLayer(url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                     attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'), name='ESRI Topographic', checked=False),
-                    dl.BaseLayer(dl.TileLayer(), name='Base', checked=True), dl.BaseLayer(dl.Overlay(children = ns("pbf2dash")), name='test')] +
+                    dl.BaseLayer(dl.TileLayer(), name='Base', checked=True)] +
         [ dl.Overlay(children=[], checked=True, id='pass', name='Passable')]+
         [ dl.Overlay(children=[], checked=True, id='pot', name='Potential')]+
         [ dl.Overlay(children=[], checked=True, id='bar', name='Barrier')]+
@@ -202,8 +274,12 @@ app.layout = html.Div([
                         sort_mode="multi",
                         filter_action="native",
                         style_data={
-                            'color': 'white',
-                            'backgroundColor': 'black'
+                            'color': 'black',
+                            'backgroundColor': 'white'
+                        },
+                        style_header={
+                            'backgroundColor': '#00828d',
+                            'fontWeight': 'bold'
                         },
                         id='table2',
                         active_cell= None
@@ -219,7 +295,7 @@ app.layout = html.Div([
 
 # ------------------------------------------------------------------------------
 # Connect Leaflet Map to Dash Components
-@cache.memoize()
+@cache.memoize(timeout=timeout)
 
 #api call function
 def apiCall(w):
@@ -237,18 +313,44 @@ def apiCall(w):
 
     return parse, parse1
 
-def apiCall_prior(w,l):
+# def apiCall_barrierType(w):
+#     request = 'https://features.hillcrestgeo.ca/bcfishpass/collections/bcfishpass.streams/items.json'
+#     query = '?properties=watershed_group_code,segmented_stream_id&filter=watershed_group_code%20=%20%27' + w + '%27' #this query slows things down for some reason
+
+#     request1 = 'https://features.hillcrestgeo.ca/bcfishpass/collections/bcfishpass.crossings/items.json'
+#     query1 = '?properties=aggregated_crossings_id,pscis_status,barrier_status,access_model_ch_co_sk,all_spawningrearing_per_barrier,all_spawningrearing_km&filter=watershed_group_code%20=%20%27' + w + '%27%20AND%20all_spawningrearing_km%3e0%20AND%20'
+
+#     response_API = requests.get(request+query)
+#     response_API1 = requests.get(request1+query1)
+
+#     parse = response_API.text
+#     parse1 = response_API1.text
+
+#     return parse, parse1
+
+def apiCall_prior(w,l,b,n):
 
     list1 = "("
     if l == 'intermediate':
+        bar = inter_table
+
         for i in inter_table['intermediate'].values:
             if i == (inter_table['intermediate'].iat[-1]):
                 list1 = list1 + str(i) + ")"
             else:
                 list1 = list1 + str(i) + ","
     elif l == 'priority':
-        for i in prior_table['aggregated_crossings_id'].values:
-            if i == (prior_table['aggregated_crossings_id'].iat[-1]):
+
+        if b is not None and n is None:
+            bar = prior_table[prior_table['barrier_type']==b]
+        elif b is None and n is not None:
+            bar = prior_table[prior_table['next_steps']==n]
+        else:
+            bar = prior_table
+
+        
+        for i in bar['aggregated_crossings_id'].values:
+            if i == (bar['aggregated_crossings_id'].iat[-1]):
                 list1 = list1 + str(i) + ")"
             else:
                 list1 = list1 + str(i) + ","
@@ -266,68 +368,129 @@ def apiCall_prior(w,l):
     parse = response_API.text
     parse1 = response_API1.text
 
-    return parse, parse1
+    return parse, parse1, bar
 
-def get_data(features):
+def get_data(features,p):
     Passable = []
     potential = []
     barrier = []
     other = []
-    for i in range(len(features)):
-        if features[i]['properties']['barrier_status'] == 'PASSABLE':
-            Passable.append(
-                dl.CircleMarker(
-                    id = str(features[i]['properties']['aggregated_crossings_id']),
-                    color='white',
-                    fillColor = '#32cd32',
-                    fillOpacity = 1, 
-                    center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
-                    children=[
-                        dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id'])),
-                        dl.Popup(str(features[i]['properties']['aggregated_crossings_id'])),
-                    ],
+
+    if p is not None:
+        for i in range(len(features)):
+            if features[i]['properties']['barrier_status'] == 'PASSABLE' and features[i]['properties']['pscis_status'] == p:
+                Passable.append(
+                    dl.CircleMarker(
+                        id = str(features[i]['properties']['aggregated_crossings_id']),
+                        color='white',
+                        fillColor = '#32cd32',
+                        fillOpacity = 1, 
+                        center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
+                        children=[
+                            dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id'])),
+                            dl.Popup(str(features[i]['properties']['aggregated_crossings_id'])),
+                        ],
+                    )
                 )
-            )
-        elif features[i]['properties']['barrier_status'] == 'POTENTIAL':
-            potential.append(
-                dl.CircleMarker(
-                    color='white',
-                    fillColor = '#ffb400',
-                    fillOpacity = 1, 
-                    center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
-                    children=[
-                        dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id'])),
-                        dl.Popup(str(features[i]['properties']['aggregated_crossings_id']) + "\n NEWS: idk whats going on!"),
-                    ],
+            elif features[i]['properties']['barrier_status'] == 'POTENTIAL' and features[i]['properties']['pscis_status'] == p:
+                potential.append(
+                    dl.CircleMarker(
+                        color='white',
+                        fillColor = '#ffb400',
+                        fillOpacity = 1, 
+                        center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
+                        children=[
+                            dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id'])),
+                            dl.Popup(str(features[i]['properties']['aggregated_crossings_id']) + "\n NEWS: idk whats going on!"),
+                        ],
+                    )
                 )
-            )
-        elif features[i]['properties']['barrier_status'] == 'BARRIER':
-            barrier.append(
-                dl.CircleMarker(
-                    id="marker",
-                    color='white',
-                    fillColor = '#d52a2a',
-                    fillOpacity = 1, 
-                    center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
-                    children=[
-                        dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id']), id="tooltip"),
-                        dl.Popup(str(features[i]['properties']['aggregated_crossings_id'])),
-                    ],
+            elif features[i]['properties']['barrier_status'] == 'BARRIER' and features[i]['properties']['pscis_status'] == p:
+                barrier.append(
+                    dl.CircleMarker(
+                        id="marker",
+                        color='white',
+                        fillColor = '#d52a2a',
+                        fillOpacity = 1, 
+                        center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
+                        children=[
+                            dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id']), id="tooltip"),
+                            dl.Popup(str(features[i]['properties']['aggregated_crossings_id'])),
+                        ],
+                    )
                 )
-            )
-        else:
-            other.append(
-                dl.CircleMarker(
-                    color = 'white',
-                    fillColor = '#965ab3',
-                    fillOpacity = 1,
-                    center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
-                    children=[
-                        dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id'])),
-                        dl.Popup()
-                    ],
+            elif features[i]['properties']['barrier_status'] == 'UNKNOWN' and features[i]['properties']['pscis_status'] == p:
+                other.append(
+                    dl.CircleMarker(
+                        color = 'white',
+                        fillColor = '#965ab3',
+                        fillOpacity = 1,
+                        center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
+                        children=[
+                            dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id'])),
+                            dl.Popup()
+                        ],
+                    )
                 )
-            )
+
+
+    else:
+
+        for i in range(len(features)):
+            if features[i]['properties']['barrier_status'] == 'PASSABLE':
+                Passable.append(
+                    dl.CircleMarker(
+                        id = str(features[i]['properties']['aggregated_crossings_id']),
+                        color='white',
+                        fillColor = '#32cd32',
+                        fillOpacity = 1, 
+                        center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
+                        children=[
+                            dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id'])),
+                            dl.Popup(str(features[i]['properties']['aggregated_crossings_id'])),
+                        ],
+                    )
+                )
+            elif features[i]['properties']['barrier_status'] == 'POTENTIAL':
+                potential.append(
+                    dl.CircleMarker(
+                        color='white',
+                        fillColor = '#ffb400',
+                        fillOpacity = 1, 
+                        center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
+                        children=[
+                            dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id'])),
+                            dl.Popup(str(features[i]['properties']['aggregated_crossings_id']) + "\n NEWS: idk whats going on!"),
+                        ],
+                    )
+                )
+            elif features[i]['properties']['barrier_status'] == 'BARRIER':
+                barrier.append(
+                    dl.CircleMarker(
+                        id="marker",
+                        color='white',
+                        fillColor = '#d52a2a',
+                        fillOpacity = 1, 
+                        center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
+                        children=[
+                            dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id']), id="tooltip"),
+                            dl.Popup(str(features[i]['properties']['aggregated_crossings_id'])),
+                        ],
+                    )
+                )
+            else:
+                other.append(
+                    dl.CircleMarker(
+                        color = 'white',
+                        fillColor = '#965ab3',
+                        fillOpacity = 1,
+                        center = (features[i]['geometry']['coordinates'][1], features[i]['geometry']['coordinates'][0]), 
+                        children=[
+                            dl.Tooltip(str(features[i]['properties']['aggregated_crossings_id'])),
+                            dl.Popup()
+                        ],
+                    )
+                )
 
     pass_cluster = dl.MarkerClusterGroup(id='markers', children=Passable)
     pot_cluster = dl.MarkerClusterGroup(id='markers', children=potential)
@@ -335,22 +498,68 @@ def get_data(features):
     other_cluster = dl.MarkerClusterGroup(id='markers1', children=other)
     return pass_cluster, pot_cluster, bar_cluster, other_cluster
 
-# features = gjson['features']
-def get_tabledata(features):
+def get_tabledata(features,p,b):
     id_list = []
-    for i in range(len(features)):
-        pscis=features[i]['properties']['pscis_status']
-        barr=features[i]['properties']['barrier_status']
-        acc=features[i]['properties']['access_model_ch_co_sk']
-        all=features[i]['properties']['all_spawningrearing_per_barrier']
-        cross_id = str(features[i]['properties']['aggregated_crossings_id'])
-        lat = features[i]['geometry']['coordinates'][1]
-        lon = features[i]['geometry']['coordinates'][0]
+#features[i]['properties']['barrier_status'] == 'PASSABLE
+    if p is not None or b is not None:
 
-        temp = dict(id = cross_id, pscis_status=pscis, barrier_status=barr, access_model_ch_co_sk=acc, all_spawningrearing_per_barrier=all, lat = lat, lon = lon)
+        if p is not None and b is None:
 
-        id_list = id_list + [temp,]
-    return id_list
+            for i in range(len(features)):
+
+                if features[i]['properties']['pscis_status'] == p:
+
+
+                    pscis=features[i]['properties']['pscis_status']
+                    barr=features[i]['properties']['barrier_status']
+                    acc=features[i]['properties']['access_model_ch_co_sk']
+                    all=features[i]['properties']['all_spawningrearing_per_barrier']
+                    cross_id = str(features[i]['properties']['aggregated_crossings_id'])
+                    lat = features[i]['geometry']['coordinates'][1]
+                    lon = features[i]['geometry']['coordinates'][0]
+
+                    temp = dict(id = cross_id, pscis_status=pscis, barrier_status=barr, access_model_ch_co_sk=acc, all_spawningrearing_per_barrier=all, lat = lat, lon = lon)
+
+                    id_list = id_list + [temp,]
+
+            return id_list
+        
+        elif b is not None and p is None:
+
+            for i in range(len(features)):
+
+                if features[i]['properties']['barrier_status'] == b:
+
+
+                    pscis=features[i]['properties']['pscis_status']
+                    barr=features[i]['properties']['barrier_status']
+                    acc=features[i]['properties']['access_model_ch_co_sk']
+                    all=features[i]['properties']['all_spawningrearing_per_barrier']
+                    cross_id = str(features[i]['properties']['aggregated_crossings_id'])
+                    lat = features[i]['geometry']['coordinates'][1]
+                    lon = features[i]['geometry']['coordinates'][0]
+
+                    temp = dict(id = cross_id, pscis_status=pscis, barrier_status=barr, access_model_ch_co_sk=acc, all_spawningrearing_per_barrier=all, lat = lat, lon = lon)
+
+                    id_list = id_list + [temp,]
+                    
+            return id_list
+
+    else: 
+        
+        for i in range(len(features)):
+            pscis=features[i]['properties']['pscis_status']
+            barr=features[i]['properties']['barrier_status']
+            acc=features[i]['properties']['access_model_ch_co_sk']
+            all=features[i]['properties']['all_spawningrearing_per_barrier']
+            cross_id = str(features[i]['properties']['aggregated_crossings_id'])
+            lat = features[i]['geometry']['coordinates'][1]
+            lon = features[i]['geometry']['coordinates'][0]
+
+            temp = dict(id = cross_id, pscis_status=pscis, barrier_status=barr, access_model_ch_co_sk=acc, all_spawningrearing_per_barrier=all, lat = lat, lon = lon)
+
+            id_list = id_list + [temp,]
+        return id_list
 
 def get_latlon(features):
     id_list = []
@@ -367,9 +576,9 @@ def get_latlon(features):
 
 
 @app.callback(
-    [Output('pass', 'children'), Output('pot', 'children'), Output('bar', 'children'), Output('other', 'children'), Output('streams', 'data'), Output('table2','data')], [Input('watershed', 'value'), Input('dd', 'value')]
+    [Output('pass', 'children'), Output('pot', 'children'), Output('bar', 'children'), Output('other', 'children'), Output('streams', 'data'), Output('table2','data')], [Input('watershed', 'value'), Input('dd', 'value'), Input('barrtype', 'value'), Input('nextstep', 'value'), Input('PCSIS', 'value'), Input('barrstat','value')]
 )
-def update_map(value, priority):
+def update_map(value, priority, barrtype, nextsteps, pcsis, barrstat):
 
     
     
@@ -379,58 +588,63 @@ def update_map(value, priority):
         B_gjson = json.loads(parse1)
         B_stream = json.loads(parse)
         features = B_gjson['features']
-        return get_data(features)[0], get_data(features)[1], get_data(features)[2], get_data(features)[3], B_stream, get_tabledata(features)
+        return get_data(features,pcsis)[0], get_data(features,pcsis)[1], get_data(features,pcsis)[2], get_data(features,pcsis)[3], B_stream, get_tabledata(features,pcsis,barrstat)
     elif value == 'LNIC':
         parse, parse1 = apiCall('LNIC')
         B_gjson = json.loads(parse1)
         B_stream = json.loads(parse)
         features = B_gjson['features']
-        return get_data(features)[0], get_data(features)[1], get_data(features)[2], get_data(features)[3], B_stream, get_tabledata(features)
+        return get_data(features,pcsis)[0], get_data(features,pcsis)[1], get_data(features,pcsis)[2], get_data(features,pcsis)[3], B_stream, get_tabledata(features,pcsis,barrstat)
     elif value == 'ELKR':
         parse, parse1 = apiCall('ELKR')
         B_gjson = json.loads(parse1)
         B_stream = json.loads(parse)
         features = B_gjson['features']
-        return get_data(features)[0], get_data(features)[1], get_data(features)[2], get_data(features)[3], B_stream, get_tabledata(features)
+        return get_data(features,pcsis)[0], get_data(features,pcsis)[1], get_data(features,pcsis)[2], get_data(features,pcsis)[3], B_stream, get_tabledata(features,pcsis,barrstat)
     elif value == 'HORS':
         parse, parse1 = apiCall('HORS')
         B_gjson = json.loads(parse1)
         B_stream = json.loads(parse)
         features = B_gjson['features']
 
+
         
 
         if priority == 'intermediate':
-            parse, parse1 = apiCall_prior('HORS',priority)
+            parse, parse1 = apiCall_prior('HORS',priority,barrtype,nextsteps)[0],apiCall_prior('HORS',priority,barrtype,nextsteps)[1]
             B_gjson = json.loads(parse1)
             B_stream = json.loads(parse)
             features = B_gjson['features']
             data = []
-            for i in range(0, len(inter_table.iloc[:,0])):
-                id_list = get_tabledata(features)
-                id_index = dict((p['id'],j) for j,p in enumerate(id_list))
-                index1 = id_index.get(str(inter_table.iloc[:,0][i]), -1)
-                data = data + [id_list[index1],]
-            return get_data(features)[0], get_data(features)[1], get_data(features)[2], get_data(features)[3], B_stream, data
+            test = get_tabledata(features,pcsis,barrstat) #all that is needed to filter table data with new filtering structure (only for intermediate list)
+            # for i in range(0, len(inter_table.iloc[:,0])):
+            #     id_list = get_tabledata(features,pcsis,barrstat)
+            #     id_index = dict((p['id'],j) for j,p in enumerate(id_list))
+            #     index1 = id_index.get(str(inter_table.iloc[:,0][i]), -1)
+            #     data = data + [id_list[index1],]
+            #     #print(type(data))
+            return get_data(features,pcsis)[0], get_data(features,pcsis)[1], get_data(features,pcsis)[2], get_data(features,pcsis)[3], B_stream, test
         elif priority == 'priority':
-            parse, parse1 = apiCall_prior('HORS',priority)
+            parse, parse1 = apiCall_prior('HORS',priority,barrtype,nextsteps)[0],apiCall_prior('HORS',priority,barrtype,nextsteps)[1]
             B_gjson = json.loads(parse1)
             B_stream = json.loads(parse)
             features = B_gjson['features']
+            bar = apiCall_prior('HORS',priority,barrtype,nextsteps)[2]
+            bar.reset_index(drop=True, inplace=True)
             data=[]
-            for i in range(0, len(prior_table.iloc[:,0])):
+            for i in range(0, len(bar.iloc[:,0])):
                 id_list = get_latlon(features)
                 id_index = dict((p['id'],j) for j,p in enumerate(id_list))
-                index1 = id_index.get(str(prior_table.iloc[:,0][i]), -1)
+                index1 = id_index.get(str(bar.iloc[:,0][i]), -1)
                 data = data + [id_list[index1],]
             data = pd.DataFrame(data)
-            new = pd.concat([prior_table,data], axis=1, join="inner")#.drop_duplicates()#.reset_index(drop=True)
+            new = pd.concat([bar,data], axis=1, join="inner")#.drop_duplicates()#.reset_index(drop=True)
             data = new.set_index('aggregated_crossings_id', drop=False).to_dict(orient="records")#.drop('id',axis=1)
 
-            return get_data(features)[0], get_data(features)[1], get_data(features)[2], get_data(features)[3], B_stream, data
+            return get_data(features,pcsis)[0], get_data(features,pcsis)[1], get_data(features,pcsis)[2], get_data(features,pcsis)[3], B_stream, data
             
         else:
-           return get_data(features)[0], get_data(features)[1], get_data(features)[2], get_data(features)[3], B_stream, get_tabledata(features) 
+           return get_data(features,pcsis)[0], get_data(features,pcsis)[1], get_data(features,pcsis)[2], get_data(features,pcsis)[3], B_stream, get_tabledata(features,pcsis,barrstat)
     
         
     
@@ -440,15 +654,15 @@ def update_map(value, priority):
     
     
 @app.callback(
-    [Output('map', 'center'), Output('map', 'zoom')], [Input('table2', 'active_cell'), Input('watershed', 'value')]
+    [Output('map', 'center'), Output('map', 'zoom')], [Input('table2', 'active_cell'), Input('watershed', 'value'), Input('PCSIS', 'value'), Input('barrstat','value')]
 )
-def marker(cell, value):
+def marker(cell, value, pcsis, barrstat):
     if value == 'HORS':
         if cell['column_id'] == "id" or cell['column_id'] == "aggregated_crossings_id":
             parse1 = apiCall(value)[1]
             B_gjson = json.loads(parse1)
             features = B_gjson['features']
-            id_list = get_tabledata(features)
+            id_list = get_tabledata(features,pcsis,barrstat)
             for i in id_list:
                 if str(i['id']) == cell['row_id']:
                     lat = i['lat']
@@ -460,7 +674,7 @@ def marker(cell, value):
             parse1 = apiCall(value)[1]
             B_gjson = json.loads(parse1)
             features = B_gjson['features']
-            id_list = get_tabledata(features)
+            id_list = get_tabledata(features,pcsis,barrstat)
             for i in id_list:
                 if str(i['id']) == cell['row_id']:
                     lat = i['lat']
@@ -473,7 +687,7 @@ def marker(cell, value):
             parse1 = apiCall(value)[1]
             B_gjson = json.loads(parse1)
             features = B_gjson['features']
-            id_list = get_tabledata(features)
+            id_list = get_tabledata(features,pcsis,barrstat)
             for i in id_list:
                 if str(i['id']) == cell['row_id']:
                     lat = i['lat']
@@ -486,7 +700,7 @@ def marker(cell, value):
             parse1 = apiCall(value)[1]
             B_gjson = json.loads(parse1)
             features = B_gjson['features']
-            id_list = get_tabledata(features)
+            id_list = get_tabledata(features,pcsis,barrstat)
             for i in id_list:
                 if str(i['id']) == cell['row_id']:
                     lat = i['lat']
@@ -506,7 +720,7 @@ def marker(cell, value):
 #         parse1 = apiCall(value)[1]
 #         B_gjson = json.loads(parse1)
 #         features = B_gjson['features']
-#         id_list = get_tabledata(features)
+#         id_list = get_tabledata(features,pcsis,barrstat)
 #         for i in id_list:
 #             if ((-0.001 <= (click[0] - i['lat'])) and ((click[0] - i['lat'])<= 0.001)) and ((-0.001 <= (click[0] - i['lon'])) and ((click[0] - i['lon'])<= 0.001)):
 #                 return cell, (i['lat'])
@@ -537,11 +751,11 @@ def marker(cell, value):
         
 #         data = []
 #         for i in range(0, len(dff.iloc[:,0])):
-#             id_list = get_tabledata(features)
+#             id_list = get_tabledata(features,pcsis,barrstat)
 #             id_index = dict((p['id'],j) for j,p in enumerate(id_list))
 #             index1 = id_index.get(str(dff.iloc[:,0][i]), -1)
 #             data = data + [id_list[index1],]
-#         return get_data(features)[0], get_data(features)[1], get_data(features)[2], get_data(features)[3], B_stream, data
+#         return get_data(features,pcsis)[0], get_data(features,pcsis)[1], get_data(features,pcsis)[2], get_data(features,pcsis)[3], B_stream, data
 
     # else:
 
@@ -579,13 +793,35 @@ def priority_filter(value):
                     {'name': 'Barrier Status', 'id': 'barrier_status', 'type': 'text'},
                     {'name': 'Acess Model', 'id': 'access_model_ch_co_sk', 'type': 'text'},
                     {'name': 'All habitat', 'id': 'all_spawningrearing_per_barrier', 'type': 'numeric'},
-                    {'name': 'Latitude', 'id': 'lat', 'type': 'numeric'},
-                    {'name': 'Longitude', 'id': 'lon', 'type': 'numeric'}
+                    #{'name': 'Latitude', 'id': 'lat', 'type': 'numeric'},
+                    #{'name': 'Longitude', 'id': 'lon', 'type': 'numeric'}
                 ]
         return columns
 
-        
+@app.callback(
+    [Output('barrtype','disabled'),Output('nextstep','disabled'),Output('PCSIS','disabled'),Output('barrstat','disabled')],[Input('dd', 'value')]
+)
 
+def extra_filter(value):
+    if value == 'priority':
+        return False, False, True, True
+    else:
+        return True, True, False, False
+
+@app.callback(
+    [Output('pass','checked'), Output('pot','checked'), Output('bar','checked'), Output('other','checked')],[Input('barrstat', 'value')]
+)
+def barrstat(value):
+    if value == 'PASSABLE':
+        return True, False, False, False
+    elif value == 'POTENTIAL':
+        return False, True, False, False
+    elif value == 'BARRIER':
+        return False, False, True, False
+    elif value == 'UNKNOWN':
+        return False, False, False, True
+    else:
+        return True, True, True, True       
 
 
         
