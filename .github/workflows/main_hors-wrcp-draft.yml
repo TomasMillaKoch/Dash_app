@@ -60,4 +60,4 @@ jobs:
         with:
           app-name: 'HORS-WRCP-Draft'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_2DAA4AC388B34D00B33656CE97520CC2 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_336329C0D5854D5590EB64CC8ABA03D7 }}
