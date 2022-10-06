@@ -1,17 +1,99 @@
-#app {
-    background-color: #00828d;
+/* font style for main page text*/
+html body {
+    font-family: 'Segoe UI', "Helvetica Neue";
+    background-color: whitesmoke;
+    padding-top: 80px;
 }
 
-#dropdown {
-    width:1500px
+h1 {
+    vertical-align: middle;
+    font-family: "futura-pt", sans-serif;
+    font-weight: lighter;
+}
+
+/* font style for datatable header*/
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner .column-header-name {
+    color: white;
+    font-family: 'Segoe UI', "Helvetica Neue";
+    font-weight: lighter;
+}
+
+/* styles for table content*/
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner.dash-fill-width .cell table {
+    background-color: #516a72;
+    border-radius: 10px;
+    font-family: 'Segoe UI', "Helvetica Neue";
+    font-size: 80%;
+    width: 50%;
+}
+
+.dash-table-container .dash-spreadsheet-container {
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
 }
 
 #map {
-    width: 1500px;
-    height: 500px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
 }
 
-#table2 {
-    float:left;
-    width: 1000px;
+/*column headers highlight on hover*/
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner th.dash-header:hover {
+    background-color:#638085!important;
 }
+
+#headrow {
+    box-shadow: 0px 1px 15px -2px rgba(0, 0, 0, 0.5);
+    z-index:10;
+    height:70px;
+    background-color: white;
+    width:100%;
+    position:absolute;
+    top:0;
+    left:0;
+}
+
+/*Changing hotpink accent colour in table header/filters */
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner table {
+    --accent: white!important;
+}
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner th.dash-filter input.dash-filter--case--sensitive {
+    border-color:#004E59!important;
+    color:#004E59!important;
+}
+
+
+/*-----------------------------------------------------
+#table2 {
+    table-layout: fixed;
+    height: 700px;
+}
+
+rounding left corner 
+.dash-header.column-0 {
+    border-radius: 10px;
+    border-color:#43666b;
+}
+
+rounding right corner 
+.dash-header.column-4 {
+    border-radius: 10px;
+    border-color:#43666b;
+}
+
+#dropdown, #extradropdown, #extradropdown2 {
+    position: absolute; 
+    top: 0px; 
+    left: 0px; 
+    visibility: hidden; 
+    height: 0px; 
+    overflow: scroll; 
+    white-space: pre; 
+    font-size: 16px; 
+    font-family: roboto, 
+    sans-serif; 
+    font-weight: 400; 
+    font-style: normal; 
+    letter-spacing: normal; 
+    text-transform: none;
+}
+
+
